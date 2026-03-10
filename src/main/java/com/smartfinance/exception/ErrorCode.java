@@ -32,7 +32,8 @@ public enum ErrorCode {
     // --- Budget ---
     BUDGET_NOT_FOUND(4030, "Budget not found", HttpStatus.NOT_FOUND),
     BUDGET_NOT_OWNED(4031, "You do not have permission to modify this budget", HttpStatus.FORBIDDEN),
-    BUDGET_DUPLICATED(4032, "A budget for this category in the specified month already exists", HttpStatus.CONFLICT);
+    BUDGET_DUPLICATED(4032, "A budget for this category in the specified month already exists", HttpStatus.CONFLICT),
+    BUDGET_INCOME_NOT_ALLOWED(4033, "Budgets can only be created for EXPENSE categories", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
