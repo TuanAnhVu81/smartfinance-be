@@ -7,6 +7,7 @@ import com.smartfinance.entity.User;
 import com.smartfinance.enums.CategoryType;
 import com.smartfinance.exception.AppException;
 import com.smartfinance.exception.ErrorCode;
+import com.smartfinance.mapper.CategoryMapper;
 import com.smartfinance.repository.CategoryRepository;
 import com.smartfinance.repository.UserRepository;
 import com.smartfinance.service.CategoryService;
@@ -24,13 +25,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final CategoryMapper categoryMapper;
 
     @Override
     public List<CategoryResponse> getAll(Long userId) {
         // Query: user's own categories + system default categories, all non-deleted
         return categoryRepository.findAllVisibleByUserId(userId)
                 .stream()
-                .map(CategoryResponse::from)
+                .map(categoryMapper::toResponse)
                 .toList();
     }
 
@@ -38,7 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getAllByType(Long userId, CategoryType type) {
         return categoryRepository.findAllVisibleByUserIdAndType(userId, type)
                 .stream()
-                .map(CategoryResponse::from)
+                .map(categoryMapper::toResponse)
                 .toList();
     }
 
@@ -52,18 +54,14 @@ public class CategoryServiceImpl implements CategoryService {
 
         User user = findUser(userId);
 
-        Category category = Category.builder()
-                .user(user)
-                .name(request.name())
-                .type(request.type())
-                .icon(request.icon())
-                .color(request.color())
-                .isDefault(false)   // user-created categories are never system defaults
-                .build();
+        // Use CategoryMapper to build new entity from request (system fields ignored)
+        Category category = categoryMapper.toEntity(request);
+        category.setUser(user);
+        category.setIsDefault(false);
 
         Category saved = categoryRepository.save(category);
         log.info("Category created: id={}, name={}, userId={}", saved.getId(), saved.getName(), userId);
-        return CategoryResponse.from(saved);
+        return categoryMapper.toResponse(saved);
     }
 
     @Override
@@ -86,14 +84,12 @@ public class CategoryServiceImpl implements CategoryService {
             throw new AppException(ErrorCode.CATEGORY_NAME_DUPLICATED);
         }
 
-        category.setName(request.name());
-        category.setType(request.type());
-        category.setIcon(request.icon());
-        category.setColor(request.color());
+        // Use CategoryMapper to update mutable fields (id, user, system flags are ignored)
+        categoryMapper.updateCategoryFromRequest(request, category);
 
         Category saved = categoryRepository.save(category);
         log.info("Category updated: id={}, name={}, userId={}", saved.getId(), saved.getName(), userId);
-        return CategoryResponse.from(saved);
+        return categoryMapper.toResponse(saved);
     }
 
     @Override

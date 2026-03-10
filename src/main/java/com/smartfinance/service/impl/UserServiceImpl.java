@@ -6,6 +6,7 @@ import com.smartfinance.dto.response.UserResponse;
 import com.smartfinance.entity.User;
 import com.smartfinance.exception.AppException;
 import com.smartfinance.exception.ErrorCode;
+import com.smartfinance.mapper.UserMapper;
 import com.smartfinance.repository.UserRepository;
 import com.smartfinance.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Override
     public UserResponse getProfile(String username) {
         User user = findUserByUsername(username);
-        return UserResponse.from(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -43,7 +45,7 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
         log.info("Profile updated for username={}", username);
-        return UserResponse.from(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
