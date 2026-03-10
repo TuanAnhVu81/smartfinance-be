@@ -41,5 +41,56 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("month") Integer month,
             @Param("year") Integer year
     );
+
+    // -----------------------------------------------------
+    // DASHBOARD METRICS (PHASE 4)
+    // -----------------------------------------------------
+
+    // 1. Calculate Summary (Total Income / Total Expense) for a specific period
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.category.type = :type " +
+           "AND t.transactionDate >= :startDate " +
+           "AND t.transactionDate <= :endDate " +
+           "AND t.isDeleted = false")
+    BigDecimal calculateTotalAmountByTypeAndPeriod(
+            @Param("userId") Long userId,
+            @Param("type") com.smartfinance.enums.CategoryType type,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDate") java.time.LocalDate endDate
+    );
+
+    // 2. Category Breakdown (Pie Chart) for a specific month/period
+    @Query("SELECT c.id AS categoryId, c.name AS categoryName, c.icon AS icon, c.color AS color, SUM(t.amount) AS totalAmount " +
+           "FROM Transaction t JOIN t.category c " +
+           "WHERE t.user.id = :userId " +
+           "AND c.type = :type " +
+           "AND t.transactionDate >= :startDate " +
+           "AND t.transactionDate <= :endDate " +
+           "AND t.isDeleted = false " +
+           "GROUP BY c.id, c.name, c.icon, c.color " +
+           "ORDER BY totalAmount DESC")
+    java.util.List<com.smartfinance.dto.response.CategoryChartProjection> getCategoryBreakdownByPeriod(
+            @Param("userId") Long userId,
+            @Param("type") com.smartfinance.enums.CategoryType type,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDate") java.time.LocalDate endDate
+    );
+
+    // 3. Monthly Trend (Bar Chart) for a specific year
+    // Extracts the month from transactionDate and groups by month + category type
+    @Query("SELECT MONTH(t.transactionDate) AS month, c.type AS type, SUM(t.amount) AS totalAmount " +
+           "FROM Transaction t JOIN t.category c " +
+           "WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :startDate " +
+           "AND t.transactionDate <= :endDate " +
+           "AND t.isDeleted = false " +
+           "GROUP BY MONTH(t.transactionDate), c.type")
+    java.util.List<com.smartfinance.dto.response.MonthlyTrendProjection> getMonthlyTrendByPeriod(
+            @Param("userId") Long userId,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDate") java.time.LocalDate endDate
+    );
 }
+
 
