@@ -33,7 +33,11 @@ public enum ErrorCode {
     BUDGET_NOT_FOUND(4030, "Budget not found", HttpStatus.NOT_FOUND),
     BUDGET_NOT_OWNED(4031, "You do not have permission to modify this budget", HttpStatus.FORBIDDEN),
     BUDGET_DUPLICATED(4032, "A budget for this category in the specified month already exists", HttpStatus.CONFLICT),
-    BUDGET_INCOME_NOT_ALLOWED(4033, "Budgets can only be created for EXPENSE categories", HttpStatus.BAD_REQUEST);
+    BUDGET_INCOME_NOT_ALLOWED(4033, "Budgets can only be created for EXPENSE categories", HttpStatus.BAD_REQUEST),
+
+    // --- AI Insight ---
+    AI_SERVICE_UNAVAILABLE(5010, "AI service is currently unavailable, please try again later", HttpStatus.SERVICE_UNAVAILABLE),
+    AI_INSIGHT_NOT_FOUND(4040, "No AI Insight found for this period", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

@@ -15,6 +15,12 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
   admin:
     default-password: ${ADMIN_DEFAULT_PASSWORD}
+  ai:
+    gemini-api-key: ${GEMINI_API_KEY}
+    gemini-api-url: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+    model: gemini-3-flash-preview
+    connect-timeout-ms: 3000
+    read-timeout-ms: 15000
 
 springdoc:
   api-docs:

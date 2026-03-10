@@ -14,6 +14,7 @@ import com.smartfinance.repository.BudgetRepository;
 import com.smartfinance.repository.CategoryRepository;
 import com.smartfinance.repository.TransactionRepository;
 import com.smartfinance.repository.UserRepository;
+import com.smartfinance.service.AiInsightService;
 import com.smartfinance.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final BudgetRepository budgetRepository;
     private final UserRepository userRepository;
     private final TransactionMapper transactionMapper;
+    private final AiInsightService aiInsightService;
 
     @Override
     public Page<TransactionResponse> getTransactions(Long userId, Integer month, Integer year, Long categoryId, Pageable pageable) {
@@ -55,8 +57,10 @@ public class TransactionServiceImpl implements TransactionService {
 
         transactionRepository.save(tx);
         
-        // Cập nhật Budget (cộng vào)
+        // Update Budget: add new amount
         applyBudgetDelta(userId, category, null, request.amount(), request.transactionDate().getMonthValue(), request.transactionDate().getYear());
+        // Invalidate AI Insight cache for this month (data has changed)
+        aiInsightService.markOutdated(userId, request.transactionDate().getMonthValue(), request.transactionDate().getYear());
 
         log.info("Created transaction id={} for user={}", tx.getId(), userId);
         return transactionMapper.toResponse(tx);
@@ -77,7 +81,7 @@ public class TransactionServiceImpl implements TransactionService {
         Integer newYear = request.transactionDate().getYear();
         BigDecimal newAmount = request.amount();
 
-        // 1. Rollback old budget (Trừ đi ở Budget cũ)
+        // 1. Rollback old budget
         applyBudgetDelta(userId, oldCategory, oldAmount, null, oldMonth, oldYear);
 
         // Use TransactionMapper to update mutable fields (category and user set manually)
@@ -85,8 +89,13 @@ public class TransactionServiceImpl implements TransactionService {
         tx.setCategory(newCategory);
         transactionRepository.save(tx);
 
-        // 3. Apply new budget (Cộng vào Budget mới)
+        // 3. Apply new budget (add new amount)
         applyBudgetDelta(userId, newCategory, null, newAmount, newMonth, newYear);
+        // Invalidate AI insight for both old and new months (covers date-change edge case)
+        aiInsightService.markOutdated(userId, oldMonth, oldYear);
+        if (!oldMonth.equals(newMonth) || !oldYear.equals(newYear)) {
+            aiInsightService.markOutdated(userId, newMonth, newYear);
+        }
 
         log.info("Updated transaction id={} for user={}", tx.getId(), userId);
         return transactionMapper.toResponse(tx);
@@ -100,9 +109,11 @@ public class TransactionServiceImpl implements TransactionService {
         tx.setIsDeleted(true);
         transactionRepository.save(tx);
 
-        // Rollback budget (Trừ đi số tiền)
-        applyBudgetDelta(userId, tx.getCategory(), tx.getAmount(), null, 
+        // Rollback budget amount on soft-delete
+        applyBudgetDelta(userId, tx.getCategory(), tx.getAmount(), null,
                 tx.getTransactionDate().getMonthValue(), tx.getTransactionDate().getYear());
+        // Invalidate AI insight cache for affected month
+        aiInsightService.markOutdated(userId, tx.getTransactionDate().getMonthValue(), tx.getTransactionDate().getYear());
 
         log.info("Soft-deleted transaction id={} for user={}", tx.getId(), userId);
     }
@@ -110,17 +121,18 @@ public class TransactionServiceImpl implements TransactionService {
     // --- Helper Methods ---
 
     /**
-     * Logic thông minh để điều chỉnh dòng tiền trong ngân sách:
-     * - oldAmount != null: Nghĩa là CẦN TRỪ số tiền này khỏi Budget (rollback).
-     * - newAmount != null: Nghĩa là CẦN CỘNG số tiền này vào Budget (apply).
+     * Smart logic to adjust cash flow within the budget:
+     * - oldAmount != null: Means we need to SUBTRACT this amount from Budget (rollback).
+     * - newAmount != null: Means we need to ADD this amount to Budget (apply).
      */
     private void applyBudgetDelta(Long userId, Category category, BigDecimal oldAmount, BigDecimal newAmount, Integer month, Integer year) {
-        // Chỉ cập nhật Budget đối với loại chi tiêu (EXPENSE). Không làm Budget cho INCOME.
+        // Only update Budget for EXPENSE category type. Skip INCOME budgets.
         if (category.getType() != CategoryType.EXPENSE) {
             return;
         }
 
-        // Nếu budget không có, "skip silently" theo đúng yêu cầu dự án.
+        // If no budget exists, skip silently as per project requirements
+
         budgetRepository.findByUserIdAndCategoryIdAndMonthAndYear(userId, category.getId(), month, year)
                 .ifPresent(budget -> {
                     BigDecimal spent = budget.getSpentAmount();
@@ -131,7 +143,7 @@ public class TransactionServiceImpl implements TransactionService {
                         spent = spent.add(newAmount);
                     }
                     
-                    // Để an toàn, nếu số bị trừ lố về âm thì ép lên 0 (phòng trường hợp data lệch)
+                    // Safety fallback: if the spent amount drops below zero, clamp it to zero to prevent data skew
                     if (spent.compareTo(BigDecimal.ZERO) < 0) {
                         spent = BigDecimal.ZERO;
                     }
@@ -164,7 +176,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
                 
         if (!tx.getUser().getId().equals(userId)) {
-            // Không được chạm vào transaction của người khác
+            // Cannot modify another user's transaction
             throw new AppException(ErrorCode.TRANSACTION_NOT_OWNED);
         }
         
