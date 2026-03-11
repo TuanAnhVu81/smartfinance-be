@@ -43,7 +43,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     );
 
     // -----------------------------------------------------
-    // DASHBOARD METRICS (PHASE 4)
+    // DASHBOARD METRICS 
     // -----------------------------------------------------
 
     // 1. Calculate Summary (Total Income / Total Expense) for a specific period
@@ -87,6 +87,35 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            "AND t.isDeleted = false " +
            "GROUP BY MONTH(t.transactionDate), c.type")
     java.util.List<com.smartfinance.dto.response.MonthlyTrendProjection> getMonthlyTrendByPeriod(
+            @Param("userId") Long userId,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDate") java.time.LocalDate endDate
+    );
+
+    // -----------------------------------------------------
+    // EXPORT MODULE 
+    // -----------------------------------------------------
+
+    // 1. Fail-fast validation: count matching records before initiating stream
+    @Query("SELECT COUNT(t) FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :startDate " +
+           "AND t.transactionDate <= :endDate " +
+           "AND t.isDeleted = false")
+    long countTransactionsForExport(
+            @Param("userId") Long userId,
+            @Param("startDate") java.time.LocalDate startDate,
+            @Param("endDate") java.time.LocalDate endDate
+    );
+
+    // 2. Stream transactions out to avoid OOM for large exports
+    @Query("SELECT t FROM Transaction t " +
+           "WHERE t.user.id = :userId " +
+           "AND t.transactionDate >= :startDate " +
+           "AND t.transactionDate <= :endDate " +
+           "AND t.isDeleted = false " +
+           "ORDER BY t.transactionDate ASC, t.id ASC")
+    java.util.stream.Stream<Transaction> streamTransactionsForExport(
             @Param("userId") Long userId,
             @Param("startDate") java.time.LocalDate startDate,
             @Param("endDate") java.time.LocalDate endDate

@@ -37,7 +37,10 @@ public enum ErrorCode {
 
     // --- AI Insight ---
     AI_SERVICE_UNAVAILABLE(5010, "AI service is currently unavailable, please try again later", HttpStatus.SERVICE_UNAVAILABLE),
-    AI_INSIGHT_NOT_FOUND(4040, "No AI Insight found for this period", HttpStatus.NOT_FOUND);
+    AI_INSIGHT_NOT_FOUND(4040, "No AI Insight found for this period", HttpStatus.NOT_FOUND),
+
+    // --- Export ---
+    NO_DATA_TO_EXPORT(4050, "No data available to export for this period", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;
