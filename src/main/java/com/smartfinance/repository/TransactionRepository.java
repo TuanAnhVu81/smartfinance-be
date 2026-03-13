@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     // Dynamic filter query for transaction list (GET /api/transactions)
-    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId " +
+    @Query("SELECT t FROM Transaction t JOIN FETCH t.category WHERE t.user.id = :userId " +
            "AND (:categoryId IS NULL OR t.category.id = :categoryId) " +
            "AND (:month IS NULL OR MONTH(t.transactionDate) = :month) " +
            "AND (:year IS NULL OR YEAR(t.transactionDate) = :year) " +
@@ -109,7 +109,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     );
 
     // 2. Stream transactions out to avoid OOM for large exports
-    @Query("SELECT t FROM Transaction t " +
+    @Query("SELECT t FROM Transaction t JOIN FETCH t.category " +
            "WHERE t.user.id = :userId " +
            "AND t.transactionDate >= :startDate " +
            "AND t.transactionDate <= :endDate " +

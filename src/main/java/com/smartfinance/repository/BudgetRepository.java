@@ -22,7 +22,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     );
 
     // Get all budgets for a user in a specific month/year (used for GET /api/budgets)
-    @Query("SELECT b FROM Budget b WHERE b.user.id = :userId AND b.month = :month AND b.year = :year")
+    @Query("SELECT b FROM Budget b JOIN FETCH b.category WHERE b.user.id = :userId AND b.month = :month AND b.year = :year")
     List<Budget> findAllByUserIdAndMonthAndYear(
             @Param("userId") Long userId,
             @Param("month") Integer month,

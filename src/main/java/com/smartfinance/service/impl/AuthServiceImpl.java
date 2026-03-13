@@ -15,11 +15,14 @@ import com.smartfinance.security.JwtTokenProvider;
 import com.smartfinance.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -73,7 +76,11 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.ACCOUNT_LOCKED);
         }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername());
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toList());
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
         log.info("User logged in: username={}", user.getUsername());
@@ -92,11 +99,16 @@ public class AuthServiceImpl implements AuthService {
         // Verify user still exists and account is active
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        
         if (!user.getIsActive()) {
             throw new AppException(ErrorCode.ACCOUNT_LOCKED);
         }
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(username);
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toList());
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(username, roles);
         log.info("Access token refreshed for username={}", username);
         return new AuthResponse(newAccessToken, refreshToken, userMapper.toResponse(user));
     }

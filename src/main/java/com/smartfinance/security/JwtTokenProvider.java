@@ -29,21 +29,23 @@ public class JwtTokenProvider {
         this.refreshExpirationMs = refreshExpirationMs;
     }
 
-    // Generate short-lived access token containing username as subject
-    public String generateAccessToken(String username) {
-        return buildToken(username, expirationMs);
+    // Generate short-lived access token containing username and roles
+    public String generateAccessToken(String username, java.util.Collection<String> roles) {
+        return Jwts.builder()
+                .subject(username)
+                .claim("roles", roles)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(secretKey)
+                .compact();
     }
 
-    // Generate long-lived refresh token
+    // Generate long-lived refresh token (keep it slim)
     public String generateRefreshToken(String username) {
-        return buildToken(username, refreshExpirationMs);
-    }
-
-    private String buildToken(String username, long expiry) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiry))
+                .expiration(new Date(System.currentTimeMillis() + refreshExpirationMs))
                 .signWith(secretKey)
                 .compact();
     }
@@ -51,6 +53,12 @@ public class JwtTokenProvider {
     // Extract username (subject) from token claims
     public String getUsernameFromToken(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    // Extract roles from token claims
+    @SuppressWarnings("unchecked")
+    public java.util.List<String> getRolesFromToken(String token) {
+        return parseClaims(token).get("roles", java.util.List.class);
     }
 
     // Validate token signature and expiration; return false on any JWT error
