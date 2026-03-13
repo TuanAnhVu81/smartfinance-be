@@ -2,6 +2,7 @@ package com.smartfinance.controller;
 
 import com.smartfinance.dto.response.UserResponse;
 import com.smartfinance.exception.ApiResponse;
+import com.smartfinance.security.UserPrincipal;
 import com.smartfinance.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -41,10 +42,9 @@ public class AdminController {
     public ApiResponse<UserResponse> updateUserStatus(
             @PathVariable("id") Long id,
             @RequestParam("enabled") boolean enabled,
-            Authentication authentication) {
+            @AuthenticationPrincipal UserPrincipal principal) {
         
-        String currentUsername = authentication.getName();
-        UserResponse response = adminService.updateUserStatus(id, enabled, currentUsername);
+        UserResponse response = adminService.updateUserStatus(id, enabled, principal.getUsername());
         
         return ApiResponse.success(response, "Updated user status successfully");
     }

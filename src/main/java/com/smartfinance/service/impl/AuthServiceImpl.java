@@ -80,7 +80,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList());
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), roles);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
         log.info("User logged in: username={}", user.getUsername());
@@ -108,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
                 .map(role -> role.getName().name())
                 .collect(Collectors.toList());
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(username, roles);
+        String newAccessToken = jwtTokenProvider.generateAccessToken(username, user.getId(), roles);
         log.info("Access token refreshed for username={}", username);
         return new AuthResponse(newAccessToken, refreshToken, userMapper.toResponse(user));
     }

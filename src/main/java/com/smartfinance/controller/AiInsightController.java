@@ -1,11 +1,8 @@
 package com.smartfinance.controller;
 
 import com.smartfinance.dto.response.AiInsightResponse;
-import com.smartfinance.entity.User;
 import com.smartfinance.exception.ApiResponse;
-import com.smartfinance.exception.AppException;
-import com.smartfinance.exception.ErrorCode;
-import com.smartfinance.repository.UserRepository;
+import com.smartfinance.security.UserPrincipal;
 import com.smartfinance.service.AiInsightService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -13,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +26,6 @@ import java.time.LocalDate;
 public class AiInsightController {
 
     private final AiInsightService aiInsightService;
-    private final UserRepository userRepository;
 
     /**
      * GET /api/ai-insights?month=5&year=2026
@@ -39,15 +34,14 @@ public class AiInsightController {
     @GetMapping
     @Operation(summary = "Get AI financial insight (uses smart cache)")
     public ResponseEntity<ApiResponse<AiInsightResponse>> getInsight(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
 
-        Long userId = resolveUserId(userDetails);
         int effectiveMonth = (month != null) ? month : LocalDate.now().getMonthValue();
         int effectiveYear  = (year  != null) ? year  : LocalDate.now().getYear();
 
-        AiInsightResponse response = aiInsightService.getInsight(userId, effectiveMonth, effectiveYear);
+        AiInsightResponse response = aiInsightService.getInsight(principal.getId(), effectiveMonth, effectiveYear);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -58,21 +52,14 @@ public class AiInsightController {
     @PostMapping("/refresh")
     @Operation(summary = "Force refresh AI insight (bypasses cache)")
     public ResponseEntity<ApiResponse<AiInsightResponse>> refreshInsight(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
 
-        Long userId = resolveUserId(userDetails);
         int effectiveMonth = (month != null) ? month : LocalDate.now().getMonthValue();
         int effectiveYear  = (year  != null) ? year  : LocalDate.now().getYear();
 
-        AiInsightResponse response = aiInsightService.refreshInsight(userId, effectiveMonth, effectiveYear);
+        AiInsightResponse response = aiInsightService.refreshInsight(principal.getId(), effectiveMonth, effectiveYear);
         return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    private Long resolveUserId(UserDetails userDetails) {
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return user.getId();
     }
 }

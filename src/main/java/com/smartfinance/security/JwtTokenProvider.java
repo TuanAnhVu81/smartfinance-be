@@ -29,10 +29,11 @@ public class JwtTokenProvider {
         this.refreshExpirationMs = refreshExpirationMs;
     }
 
-    // Generate short-lived access token containing username and roles
-    public String generateAccessToken(String username, java.util.Collection<String> roles) {
+    // Generate short-lived access token containing username, userId and roles
+    public String generateAccessToken(String username, Long userId, java.util.Collection<String> roles) {
         return Jwts.builder()
                 .subject(username)
+                .claim("userId", userId)
                 .claim("roles", roles)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
@@ -53,6 +54,11 @@ public class JwtTokenProvider {
     // Extract username (subject) from token claims
     public String getUsernameFromToken(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    // Extract userId from token claims
+    public Long getUserIdFromToken(String token) {
+        return parseClaims(token).get("userId", Long.class);
     }
 
     // Extract roles from token claims

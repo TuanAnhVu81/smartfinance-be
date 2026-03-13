@@ -76,20 +76,20 @@ public class DataInitializer implements CommandLineRunner {
         if (categoryRepository.count() == 0) {
             List<Category> defaultCategories = List.of(
                     // EXPENSE
-                    Category.builder().name("Food").type(CategoryType.EXPENSE).icon("🍔").isDefault(true).build(),
-                    Category.builder().name("Transport").type(CategoryType.EXPENSE).icon("🚗").isDefault(true).build(),
-                    Category.builder().name("Shopping").type(CategoryType.EXPENSE).icon("🛍️").isDefault(true).build(),
-                    Category.builder().name("Entertainment").type(CategoryType.EXPENSE).icon("🎮").isDefault(true).build(),
-                    Category.builder().name("Health").type(CategoryType.EXPENSE).icon("💊").isDefault(true).build(),
-                    Category.builder().name("Education").type(CategoryType.EXPENSE).icon("📚").isDefault(true).build(),
-                    Category.builder().name("Housing").type(CategoryType.EXPENSE).icon("🏠").isDefault(true).build(),
-                    Category.builder().name("Others").type(CategoryType.EXPENSE).icon("📦").isDefault(true).build(),
+                    Category.builder().name("Food").type(CategoryType.EXPENSE).icon("🍔").color("#FF8042").isDefault(true).build(),
+                    Category.builder().name("Transport").type(CategoryType.EXPENSE).icon("🚗").color("#0088FE").isDefault(true).build(),
+                    Category.builder().name("Shopping").type(CategoryType.EXPENSE).icon("🛍️").color("#00C49F").isDefault(true).build(),
+                    Category.builder().name("Entertainment").type(CategoryType.EXPENSE).icon("🎮").color("#FFBB28").isDefault(true).build(),
+                    Category.builder().name("Health").type(CategoryType.EXPENSE).icon("💊").color("#FF4842").isDefault(true).build(),
+                    Category.builder().name("Education").type(CategoryType.EXPENSE).icon("📚").color("#1890FF").isDefault(true).build(),
+                    Category.builder().name("Housing").type(CategoryType.EXPENSE).icon("🏠").color("#722ED1").isDefault(true).build(),
+                    Category.builder().name("Others").type(CategoryType.EXPENSE).icon("📦").color("#94A3B8").isDefault(true).build(),
                     
                     // INCOME
-                    Category.builder().name("Salary").type(CategoryType.INCOME).icon("💼").isDefault(true).build(),
-                    Category.builder().name("Investment").type(CategoryType.INCOME).icon("📈").isDefault(true).build(),
-                    Category.builder().name("Bonus").type(CategoryType.INCOME).icon("🎁").isDefault(true).build(),
-                    Category.builder().name("Others").type(CategoryType.INCOME).icon("💰").isDefault(true).build()
+                    Category.builder().name("Salary").type(CategoryType.INCOME).icon("💼").color("#52C41A").isDefault(true).build(),
+                    Category.builder().name("Investment").type(CategoryType.INCOME).icon("📈").color("#13C2C2").isDefault(true).build(),
+                    Category.builder().name("Bonus").type(CategoryType.INCOME).icon("🎁").color("#FADB14").isDefault(true).build(),
+                    Category.builder().name("Others").type(CategoryType.INCOME).icon("💰").color("#8C8C8C").isDefault(true).build()
             );
             categoryRepository.saveAll(defaultCategories);
             log.info("Seeded default Categories.");

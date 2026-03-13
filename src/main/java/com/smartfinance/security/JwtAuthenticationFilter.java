@@ -33,15 +33,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Validate token and set authentication in SecurityContext if valid
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
             String username = jwtTokenProvider.getUsernameFromToken(token);
+            Long userId = jwtTokenProvider.getUserIdFromToken(token);
             java.util.List<String> roles = jwtTokenProvider.getRolesFromToken(token);
 
-            if (roles != null) {
+            if (roles != null && userId != null) {
                 java.util.Set<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = roles.stream()
                         .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
                         .collect(java.util.stream.Collectors.toSet());
 
-                org.springframework.security.core.userdetails.User principal = 
-                        new org.springframework.security.core.userdetails.User(username, "", authorities);
+                UserPrincipal principal = new UserPrincipal(userId, username, authorities);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(principal, null, authorities);

@@ -2,11 +2,8 @@ package com.smartfinance.controller;
 
 import com.smartfinance.dto.request.TransactionRequest;
 import com.smartfinance.dto.response.TransactionResponse;
-import com.smartfinance.entity.User;
 import com.smartfinance.exception.ApiResponse;
-import com.smartfinance.exception.AppException;
-import com.smartfinance.exception.ErrorCode;
-import com.smartfinance.repository.UserRepository;
+import com.smartfinance.security.UserPrincipal;
 import com.smartfinance.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -21,7 +18,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,19 +36,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionController {
 
     private final TransactionService transactionService;
-    private final UserRepository userRepository;
 
     @GetMapping
     @Operation(summary = "Get list of user transactions with pagination and optional filters")
     public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getTransactions(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Long categoryId,
             @ParameterObject @PageableDefault(sort = {"transactionDate", "createdAt"}, direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Long userId = resolveUserId(userDetails);
-        Page<TransactionResponse> page = transactionService.getTransactions(userId, month, year, categoryId, pageable);
+        Page<TransactionResponse> page = transactionService.getTransactions(principal.getId(), month, year, categoryId, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(page));
     }
@@ -60,11 +54,10 @@ public class TransactionController {
     @PostMapping
     @Operation(summary = "Create a new transaction and adjust budget if applicable")
     public ResponseEntity<ApiResponse<TransactionResponse>> createTransaction(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody TransactionRequest request) {
 
-        Long userId = resolveUserId(userDetails);
-        TransactionResponse response = transactionService.createTransaction(userId, request);
+        TransactionResponse response = transactionService.createTransaction(principal.getId(), request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -74,12 +67,11 @@ public class TransactionController {
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing transaction and readjust budget delta")
     public ResponseEntity<ApiResponse<TransactionResponse>> updateTransaction(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id,
             @Valid @RequestBody TransactionRequest request) {
 
-        Long userId = resolveUserId(userDetails);
-        TransactionResponse response = transactionService.updateTransaction(userId, id, request);
+        TransactionResponse response = transactionService.updateTransaction(principal.getId(), id, request);
 
         return ResponseEntity.ok(ApiResponse.success(response, "Transaction updated successfully"));
     }
@@ -87,19 +79,11 @@ public class TransactionController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft delete a transaction and rollback budget spending")
     public ResponseEntity<ApiResponse<Void>> deleteTransaction(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
 
-        Long userId = resolveUserId(userDetails);
-        transactionService.deleteTransaction(userId, id);
+        transactionService.deleteTransaction(principal.getId(), id);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Transaction deleted successfully"));
-    }
-
-    // Helper: resolve Long userId from the authenticated UserDetails (username)
-    private Long resolveUserId(UserDetails userDetails) {
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return user.getId();
     }
 }

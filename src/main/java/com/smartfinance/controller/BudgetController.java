@@ -2,11 +2,8 @@ package com.smartfinance.controller;
 
 import com.smartfinance.dto.request.BudgetRequest;
 import com.smartfinance.dto.response.BudgetResponse;
-import com.smartfinance.entity.User;
 import com.smartfinance.exception.ApiResponse;
-import com.smartfinance.exception.AppException;
-import com.smartfinance.exception.ErrorCode;
-import com.smartfinance.repository.UserRepository;
+import com.smartfinance.security.UserPrincipal;
 import com.smartfinance.service.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -16,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,7 +34,6 @@ import java.util.List;
 public class BudgetController {
 
     private final BudgetService budgetService;
-    private final UserRepository userRepository;
 
     /**
      * GET /api/budgets?month=5&year=2024
@@ -48,16 +43,15 @@ public class BudgetController {
     @GetMapping
     @Operation(summary = "Get all budgets for the current user in a given month/year")
     public ResponseEntity<ApiResponse<List<BudgetResponse>>> getBudgets(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
 
-        Long userId = resolveUserId(userDetails);
         // Default to current month/year when not provided by client
         int effectiveMonth = (month != null) ? month : LocalDate.now().getMonthValue();
         int effectiveYear  = (year  != null) ? year  : LocalDate.now().getYear();
 
-        List<BudgetResponse> budgets = budgetService.getBudgets(userId, effectiveMonth, effectiveYear);
+        List<BudgetResponse> budgets = budgetService.getBudgets(principal.getId(), effectiveMonth, effectiveYear);
         return ResponseEntity.ok(ApiResponse.success(budgets));
     }
 
@@ -68,11 +62,10 @@ public class BudgetController {
     @PostMapping
     @Operation(summary = "Create a new budget with auto-sync of existing transactions")
     public ResponseEntity<ApiResponse<BudgetResponse>> createBudget(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody BudgetRequest request) {
 
-        Long userId = resolveUserId(userDetails);
-        BudgetResponse created = budgetService.createBudget(userId, request);
+        BudgetResponse created = budgetService.createBudget(principal.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(created));
     }
 
@@ -83,12 +76,11 @@ public class BudgetController {
     @PutMapping("/{id}")
     @Operation(summary = "Update spending limit of an existing budget")
     public ResponseEntity<ApiResponse<BudgetResponse>> updateBudget(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id,
             @Valid @RequestBody BudgetRequest request) {
 
-        Long userId = resolveUserId(userDetails);
-        BudgetResponse updated = budgetService.updateBudget(userId, id, request);
+        BudgetResponse updated = budgetService.updateBudget(principal.getId(), id, request);
         return ResponseEntity.ok(ApiResponse.success(updated));
     }
 
@@ -99,18 +91,10 @@ public class BudgetController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Hard-delete a budget record")
     public ResponseEntity<ApiResponse<Void>> deleteBudget(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable Long id) {
 
-        Long userId = resolveUserId(userDetails);
-        budgetService.deleteBudget(userId, id);
+        budgetService.deleteBudget(principal.getId(), id);
         return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    // Resolve Long userId from the authenticated UserDetails (username as lookup key)
-    private Long resolveUserId(UserDetails userDetails) {
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return user.getId();
     }
 }
