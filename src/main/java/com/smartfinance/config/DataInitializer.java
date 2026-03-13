@@ -54,13 +54,13 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAdminAccount() {
-        String adminUsername = "admin";
-        if (!userRepository.existsByUsername(adminUsername)) {
+        String admin = "admin";
+        if (!userRepository.existsByUsername(admin)) {
             Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
                     .orElseThrow(() -> new RuntimeException("ROLE_ADMIN not found, should be seeded first"));
             
             User adminAccount = User.builder()
-                    .username(adminUsername)
+                    .username(admin)
                     .email("admin@smartfinance.com")
                     .password(passwordEncoder.encode(adminDefaultPassword))
                     .fullName("System Administrator")
@@ -68,7 +68,7 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             userRepository.save(adminAccount);
-            log.info("Seeded default Admin account (username: {}, password: {})", adminUsername, adminDefaultPassword);
+            log.info("Seeded default Admin account (username: {}, password: {})", admin, adminDefaultPassword);
         }
     }
 
