@@ -8,6 +8,7 @@ import com.smartfinance.entity.User;
 import com.smartfinance.enums.RoleName;
 import com.smartfinance.exception.AppException;
 import com.smartfinance.exception.ErrorCode;
+import com.smartfinance.mapper.UserMapper;
 import com.smartfinance.repository.RoleRepository;
 import com.smartfinance.repository.UserRepository;
 import com.smartfinance.security.JwtTokenProvider;
@@ -29,6 +30,7 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -75,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
         log.info("User logged in: username={}", user.getUsername());
-        return new AuthResponse(accessToken, refreshToken);
+        return new AuthResponse(accessToken, refreshToken, userMapper.toResponse(user));
     }
 
     @Override
@@ -96,6 +98,6 @@ public class AuthServiceImpl implements AuthService {
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(username);
         log.info("Access token refreshed for username={}", username);
-        return new AuthResponse(newAccessToken, refreshToken);
+        return new AuthResponse(newAccessToken, refreshToken, userMapper.toResponse(user));
     }
 }

@@ -7,7 +7,9 @@ import com.smartfinance.entity.Role;
 import com.smartfinance.entity.User;
 import com.smartfinance.enums.RoleName;
 import com.smartfinance.exception.AppException;
+import com.smartfinance.dto.response.UserResponse;
 import com.smartfinance.exception.ErrorCode;
+import com.smartfinance.mapper.UserMapper;
 import com.smartfinance.repository.RoleRepository;
 import com.smartfinance.repository.UserRepository;
 import com.smartfinance.security.JwtTokenProvider;
@@ -44,6 +46,9 @@ class AuthServiceImplTest {
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private UserMapper userMapper;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -100,6 +105,7 @@ class AuthServiceImplTest {
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
         when(jwtTokenProvider.generateAccessToken("testuser")).thenReturn("accessToken");
         when(jwtTokenProvider.generateRefreshToken("testuser")).thenReturn("refreshToken");
+        when(userMapper.toResponse(any(User.class))).thenReturn(new UserResponse());
 
         // Act
         AuthResponse response = authService.login(request);
@@ -142,6 +148,7 @@ class AuthServiceImplTest {
         when(jwtTokenProvider.getUsernameFromToken("validRefresh")).thenReturn("testuser");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(jwtTokenProvider.generateAccessToken("testuser")).thenReturn("newAccessToken");
+        when(userMapper.toResponse(any(User.class))).thenReturn(new UserResponse());
 
         // Act
         AuthResponse response = authService.refresh("validRefresh");

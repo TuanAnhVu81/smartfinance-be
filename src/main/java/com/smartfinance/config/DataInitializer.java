@@ -16,7 +16,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import org.springframework.stereotype.Component;
+
 
 import java.util.List;
 import java.util.Set;
@@ -59,7 +59,7 @@ public class DataInitializer implements CommandLineRunner {
             Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
                     .orElseThrow(() -> new RuntimeException("ROLE_ADMIN not found, should be seeded first"));
             
-            User admin = User.builder()
+            User adminAccount = User.builder()
                     .username(adminUsername)
                     .email("admin@smartfinance.com")
                     .password(passwordEncoder.encode(adminDefaultPassword))
@@ -67,7 +67,7 @@ public class DataInitializer implements CommandLineRunner {
                     .roles(Set.of(adminRole))
                     .build();
 
-            userRepository.save(admin);
+            userRepository.save(adminAccount);
             log.info("Seeded default Admin account (username: {}, password: {})", adminUsername, adminDefaultPassword);
         }
     }

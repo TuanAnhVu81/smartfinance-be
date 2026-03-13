@@ -17,6 +17,7 @@ public enum ErrorCode {
     INVALID_TOKEN(4005, "Invalid or expired token", HttpStatus.UNAUTHORIZED),
     ACCOUNT_LOCKED(4006, "Account has been locked", HttpStatus.FORBIDDEN),
     WRONG_PASSWORD(4007, "Current password is incorrect", HttpStatus.BAD_REQUEST),
+    CANNOT_BLOCK_SELF(4008, "You cannot block your own account", HttpStatus.BAD_REQUEST),
 
     // --- Category ---
     CATEGORY_NOT_FOUND(4010, "Category not found", HttpStatus.NOT_FOUND),

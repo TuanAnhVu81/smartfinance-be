@@ -4,9 +4,10 @@ package com.smartfinance.dto.response;
 public record AuthResponse(
         String accessToken,
         String refreshToken,
-        String tokenType
+        String tokenType,
+        UserResponse user
 ) {
-    public AuthResponse(String accessToken, String refreshToken) {
-        this(accessToken, refreshToken, "Bearer");
+    public AuthResponse(String accessToken, String refreshToken, UserResponse user) {
+        this(accessToken, refreshToken, "Bearer", user);
     }
 }
