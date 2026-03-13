@@ -56,15 +56,23 @@ public class JwtTokenProvider {
         return parseClaims(token).getSubject();
     }
 
-    // Extract userId from token claims
+    // Extract userId from token claims (handles both Integer and Long)
     public Long getUserIdFromToken(String token) {
-        return parseClaims(token).get("userId", Long.class);
+        Object userId = parseClaims(token).get("userId");
+        if (userId instanceof Number) {
+            return ((Number) userId).longValue();
+        }
+        return null;
     }
 
     // Extract roles from token claims
     @SuppressWarnings("unchecked")
     public java.util.List<String> getRolesFromToken(String token) {
-        return parseClaims(token).get("roles", java.util.List.class);
+        Object roles = parseClaims(token).get("roles");
+        if (roles instanceof java.util.List) {
+            return (java.util.List<String>) roles;
+        }
+        return java.util.Collections.emptyList();
     }
 
     // Validate token signature and expiration; return false on any JWT error

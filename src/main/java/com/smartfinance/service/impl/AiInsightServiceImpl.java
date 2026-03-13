@@ -2,6 +2,7 @@ package com.smartfinance.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smartfinance.dto.request.AiChatRequest;
 import com.smartfinance.dto.response.AiInsightResponse;
 import com.smartfinance.dto.response.CategoryChartProjection;
 import com.smartfinance.entity.AiInsight;
@@ -92,6 +93,43 @@ public class AiInsightServiceImpl implements AiInsightService {
                 });
     }
 
+    @Override
+    public String chatWithAi(Long userId, AiChatRequest request) {
+        log.info("AI Chat started - User: {}, Question: '{}'", userId, request.message());
+        
+        String financialContext = buildContext(userId, request.month(), request.year());
+        String systemInstruction = "Bạn là cố vấn tài chính chuyên nghiệp. " +
+                "Dưới đây là tóm tắt dữ liệu của người dùng trong tháng: \n" + financialContext +
+                "\nHãy trả lời câu hỏi của người dùng ngắn gọn, hữu ích và bằng tiếng Việt.";
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(geminiApiKey);
+
+            String requestBody = objectMapper.writeValueAsString(Map.of(
+                    "model", aiModel,
+                    "messages", List.of(
+                            Map.of("role", "system", "content", systemInstruction),
+                            Map.of("role", "user", "content", request.message())
+                    )
+            ));
+
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            String raw = geminiRestTemplate.postForObject(geminiApiUrl, entity, String.class);
+            JsonNode root = objectMapper.readTree(raw);
+            return root.at("/choices/0/message/content").asText("Xin lỗi, tôi không thể xử lý câu hỏi này lúc này.");
+
+
+        } catch (RestClientException e) {
+            log.error("AI Service Error (REST): {}", e.getMessage());
+            throw new AppException(ErrorCode.AI_SERVICE_UNAVAILABLE);
+        } catch (Exception e) {
+            log.error("AI Unexpected Error: {}", e.getMessage());
+            throw new AppException(ErrorCode.AI_SERVICE_UNAVAILABLE);
+        }
+    }
+
     // --- Internal logic ---
 
     private AiInsightResponse generateAndSave(AiInsight existing, Long userId, Integer month, Integer year) {
@@ -112,12 +150,11 @@ public class AiInsightServiceImpl implements AiInsightService {
         insight.setIsOutdated(false);
         aiInsightRepository.save(insight);
 
-        log.info("AI Insight generated and cached for user={} month={} year={}", userId, month, year);
+        log.debug("AI Insight generated and cached for user={} month={} year={}", userId, month, year);
         return toResponse(insight);
     }
 
-    // Build prompt with actual financial data from DB for this user/month
-    private String buildPrompt(Long userId, Integer month, Integer year) {
+    private String buildContext(Long userId, Integer month, Integer year) {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = YearMonth.of(year, month).atEndOfMonth();
 
@@ -134,14 +171,22 @@ public class AiInsightServiceImpl implements AiInsightService {
                 .collect(Collectors.joining("\n"));
 
         return String.format("""
-                You are a personal finance expert. Here is the financial data summary for month %d/%d:
                 - Total Income: %,.0f VND
                 - Total Expense: %,.0f VND
                 - Expense Breakdown:
+                %s""", totalIncome, totalExpense, breakdown.isBlank() ? "  (No expense transactions)" : breakdown);
+    }
+
+    // Build prompt with actual financial data from DB for this user/month
+    private String buildPrompt(Long userId, Integer month, Integer year) {
+        String context = buildContext(userId, month, year);
+
+        return String.format("""
+                You are a personal finance expert. Here is the financial data summary for month %d/%d:
                 %s
 
                 Analyze the data and provide 3-5 concise, practical financial tips in Vietnamese.
-                """, month, year, totalIncome, totalExpense, breakdown.isBlank() ? "  (No expense transactions)" : breakdown);
+                """, month, year, context);
     }
 
     // Call API using OpenAI Compatibility Layer standard for Vendor Agnosticism

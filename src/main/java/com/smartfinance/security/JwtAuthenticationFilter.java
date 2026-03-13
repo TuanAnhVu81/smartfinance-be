@@ -30,24 +30,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromRequest(request);
 
-        // Validate token and set authentication in SecurityContext if valid
         if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-            String username = jwtTokenProvider.getUsernameFromToken(token);
-            Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            java.util.List<String> roles = jwtTokenProvider.getRolesFromToken(token);
+            try {
+                String username = jwtTokenProvider.getUsernameFromToken(token);
+                Long userId = jwtTokenProvider.getUserIdFromToken(token);
+                java.util.List<String> roles = jwtTokenProvider.getRolesFromToken(token);
 
-            if (roles != null && userId != null) {
-                java.util.Set<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = roles.stream()
-                        .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
-                        .collect(java.util.stream.Collectors.toSet());
+                if (userId != null) {
+                    java.util.Set<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = (roles != null) 
+                            ? roles.stream()
+                                .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                                .collect(java.util.stream.Collectors.toSet())
+                            : java.util.Collections.emptySet();
 
-                UserPrincipal principal = new UserPrincipal(userId, username, authorities);
+                    UserPrincipal principal = new UserPrincipal(userId, username, authorities);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(principal, null, authorities);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
-                
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception e) {
+                log.error("Auth Error: Could not set authentication -> {}", e.getMessage());
+                SecurityContextHolder.clearContext();
             }
         }
 

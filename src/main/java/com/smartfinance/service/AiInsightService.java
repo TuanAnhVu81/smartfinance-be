@@ -1,5 +1,6 @@
 package com.smartfinance.service;
 
+import com.smartfinance.dto.request.AiChatRequest;
 import com.smartfinance.dto.response.AiInsightResponse;
 
 public interface AiInsightService {
@@ -12,4 +13,7 @@ public interface AiInsightService {
 
     // Called by TransactionService to mark insight as outdated when data changes
     void markOutdated(Long userId, Integer month, Integer year);
+
+    // Interactive chat with AI based on financial context
+    String chatWithAi(Long userId, AiChatRequest request);
 }
