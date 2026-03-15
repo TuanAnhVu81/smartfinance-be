@@ -1,7 +1,9 @@
 package com.smartfinance.service.impl;
 
+import com.smartfinance.dto.response.AdminSummaryResponse;
 import com.smartfinance.dto.response.UserResponse;
 import com.smartfinance.entity.User;
+import com.smartfinance.enums.RoleName;
 import com.smartfinance.exception.AppException;
 import com.smartfinance.exception.ErrorCode;
 import com.smartfinance.mapper.UserMapper;
@@ -54,5 +56,20 @@ public class AdminServiceImpl implements AdminService {
 
         log.info("User ID {} status updated to {} by admin '{}'", userId, enabled, currentUsername);
         return userMapper.toResponse(savedUser);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminSummaryResponse getAdminSummary() {
+        log.info("Fetching admin summary statistics");
+        long totalUsers = userRepository.count();
+        long totalAdmins = userRepository.countByRoles_Name(RoleName.ROLE_ADMIN);
+        long totalLockedUsers = userRepository.countByIsActiveFalse();
+
+        return AdminSummaryResponse.builder()
+                .totalUsers(totalUsers)
+                .totalAdmins(totalAdmins)
+                .totalLockedUsers(totalLockedUsers)
+                .build();
     }
 }

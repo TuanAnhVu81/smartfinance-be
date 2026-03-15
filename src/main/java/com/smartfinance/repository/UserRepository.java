@@ -1,6 +1,7 @@
 package com.smartfinance.repository;
 
 import com.smartfinance.entity.User;
+import com.smartfinance.enums.RoleName;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -22,4 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+
+    long countByRoles_Name(RoleName roleName);
+
+    long countByIsActiveFalse();
 }

@@ -1,5 +1,6 @@
 package com.smartfinance.controller;
 
+import com.smartfinance.dto.response.AdminSummaryResponse;
 import com.smartfinance.dto.response.UserResponse;
 import com.smartfinance.exception.ApiResponse;
 import com.smartfinance.security.UserPrincipal;
@@ -47,5 +48,11 @@ public class AdminController {
         UserResponse response = adminService.updateUserStatus(id, enabled, principal.getUsername());
         
         return ApiResponse.success(response, "Updated user status successfully");
+    }
+
+    @Operation(summary = "Get admin summary statistics")
+    @GetMapping("/summary")
+    public ApiResponse<AdminSummaryResponse> getAdminSummary() {
+        return ApiResponse.success(adminService.getAdminSummary(), "Fetched admin summary successfully");
     }
 }
