@@ -19,7 +19,7 @@ SmartFinance is a sophisticated **Personal Finance Management** ecosystem, lever
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/8029cc5f-3cd0-4502-9249-6c082df6056d" width="400" alt="AI Chat Preview">
+  <img src="https://github.com/user-attachments/assets/8029ec5f-3cd0-4502-9249-6c082df6056d" width="400" alt="AI Chat Preview">
   <img src="https://github.com/user-attachments/assets/e63cb84a-883c-4326-b20a-f8d886133a9b" width="400" alt="Mobile Preview">
   <br>
   <em>Figure 2: Generative AI Advisor (Left) & Mobile Responsive Design (Right).</em>
