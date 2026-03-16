@@ -88,9 +88,9 @@ public class JwtTokenProvider {
 
     private Claims parseClaims(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .setSigningKey(secretKey)
                 .build()
-                .parseSignedClaims(token)
-                .getPayload();
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
