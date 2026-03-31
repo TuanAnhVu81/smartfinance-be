@@ -7,8 +7,6 @@ import com.smartfinance.entity.Category;
 import com.smartfinance.entity.Transaction;
 import com.smartfinance.entity.User;
 import com.smartfinance.enums.CategoryType;
-import com.smartfinance.exception.AppException;
-import com.smartfinance.exception.ErrorCode;
 import com.smartfinance.mapper.TransactionMapper;
 import com.smartfinance.repository.BudgetRepository;
 import com.smartfinance.repository.CategoryRepository;
@@ -32,7 +30,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;

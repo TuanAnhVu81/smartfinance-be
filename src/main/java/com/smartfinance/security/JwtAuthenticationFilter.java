@@ -7,14 +7,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -34,14 +38,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String username = jwtTokenProvider.getUsernameFromToken(token);
                 Long userId = jwtTokenProvider.getUserIdFromToken(token);
-                java.util.List<String> roles = jwtTokenProvider.getRolesFromToken(token);
+                List<String> roles = jwtTokenProvider.getRolesFromToken(token);
 
                 if (userId != null) {
-                    java.util.Set<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = (roles != null) 
+                    Set<SimpleGrantedAuthority> authorities = (roles != null) 
                             ? roles.stream()
-                                .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
-                                .collect(java.util.stream.Collectors.toSet())
-                            : java.util.Collections.emptySet();
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toSet())
+                            : Collections.emptySet();
 
                     UserPrincipal principal = new UserPrincipal(userId, username, authorities);
                     UsernamePasswordAuthenticationToken authentication =

@@ -28,9 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
@@ -103,7 +106,7 @@ class AuthServiceImplTest {
         LoginRequest request = new LoginRequest("testuser", "password");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
-        when(jwtTokenProvider.generateAccessToken("testuser")).thenReturn("accessToken");
+        when(jwtTokenProvider.generateAccessToken(anyString(), anyLong(), anyList())).thenReturn("accessToken");
         when(jwtTokenProvider.generateRefreshToken("testuser")).thenReturn("refreshToken");
         when(userMapper.toResponse(any(User.class))).thenReturn(new UserResponse());
 
@@ -147,7 +150,7 @@ class AuthServiceImplTest {
         when(jwtTokenProvider.validateToken("validRefresh")).thenReturn(true);
         when(jwtTokenProvider.getUsernameFromToken("validRefresh")).thenReturn("testuser");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateAccessToken("testuser")).thenReturn("newAccessToken");
+        when(jwtTokenProvider.generateAccessToken(anyString(), anyLong(), anyList())).thenReturn("newAccessToken");
         when(userMapper.toResponse(any(User.class))).thenReturn(new UserResponse());
 
         // Act

@@ -10,7 +10,10 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -30,14 +33,14 @@ public class JwtTokenProvider {
     }
 
     // Generate short-lived access token containing username, userId and roles
-    public String generateAccessToken(String username, Long userId, java.util.Collection<String> roles) {
+    public String generateAccessToken(String username, Long userId, Collection<String> roles) {
         return Jwts.builder()
                 .subject(username)
                 .claim("userId", userId)
                 .claim("roles", roles)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
-                .signWith(secretKey)
+                .signWith(secretKey) // Changed from setSigningKey to verifyWith
                 .compact();
     }
 
@@ -67,12 +70,12 @@ public class JwtTokenProvider {
 
     // Extract roles from token claims
     @SuppressWarnings("unchecked")
-    public java.util.List<String> getRolesFromToken(String token) {
+    public List<String> getRolesFromToken(String token) {
         Object roles = parseClaims(token).get("roles");
-        if (roles instanceof java.util.List) {
-            return (java.util.List<String>) roles;
+        if (roles instanceof List) {
+            return (List<String>) roles;
         }
-        return java.util.Collections.emptyList();
+        return Collections.emptyList();
     }
 
     // Validate token signature and expiration; return false on any JWT error
@@ -88,9 +91,9 @@ public class JwtTokenProvider {
 
     private Claims parseClaims(String token) {
         return Jwts.parser()
-                .setSigningKey(secretKey)
+                .verifyWith(secretKey) // Changed from setSigningKey to verifyWith
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token) // Changed from parseClaimsJws to parseSignedClaims
+                .getPayload(); // Changed from getBody to getPayload
     }
 }

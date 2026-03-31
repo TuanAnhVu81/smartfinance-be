@@ -2,7 +2,6 @@ package com.smartfinance.service.impl;
 
 import com.smartfinance.dto.request.TransactionRequest;
 import com.smartfinance.dto.response.TransactionResponse;
-import com.smartfinance.entity.Budget;
 import com.smartfinance.entity.Category;
 import com.smartfinance.entity.Transaction;
 import com.smartfinance.entity.User;

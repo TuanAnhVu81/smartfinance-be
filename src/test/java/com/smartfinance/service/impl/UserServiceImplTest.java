@@ -53,7 +53,14 @@ class UserServiceImplTest {
         testUser.setPassword("encodedPassword");
         testUser.setFullName("Test User");
 
-        testUserResponse = new UserResponse(1L, "testuser", "test@example.com", "Test User", null, null);
+        testUserResponse = UserResponse.builder()
+                .id(1L)
+                .username("testuser")
+                .email("test@example.com")
+                .fullName("Test User")
+                .isActive(true)
+                .roles(java.util.Collections.emptySet())
+                .build();
     }
 
     @Test
@@ -88,7 +95,14 @@ class UserServiceImplTest {
         // Arrange
         UpdateProfileRequest request = new UpdateProfileRequest("Updated Name", "http://example.com/avatar.png");
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(userMapper.toResponse(any(User.class))).thenReturn(new UserResponse(1L, "testuser", "test@example.com", "Updated Name", "http://example.com/avatar.png", null));
+        when(userMapper.toResponse(any(User.class))).thenReturn(UserResponse.builder()
+                .id(1L)
+                .username("testuser")
+                .email("test@example.com")
+                .fullName("Updated Name")
+                .avatarUrl("http://example.com/avatar.png")
+                .isActive(true)
+                .build());
 
         // Act
         UserResponse result = userService.updateProfile("testuser", request);
